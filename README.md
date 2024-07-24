@@ -29,6 +29,8 @@ This project is a Library Management System API built using Symfony and follows 
 - Update User: PUT /api/users/{id}
 - Delete User: DELETE /api/users/{id}
 - Get All Users: GET /api/users
+- Borrow Book: POST /api/users/{userId}/borrow/{bookId}
+- Return Book: POST /api/users/{userId}/return/{bookId}
 
 # Books
 
@@ -38,13 +40,8 @@ This project is a Library Management System API built using Symfony and follows 
 - Delete Book: DELETE /api/books/{id}
 - Get All Books: GET /api/books
 
-# Borrowings
+# Testing Instructions
 
-- Borrow Book: POST /api/borrowings/borrow
-- Return Book: POST /api/borrowings/return/{borrowingId}
-- Get All Borrowings: GET /api/borrowings
-- Get Borrowing by ID: GET /api/borrowings/{borrowingId}
-- Testing Instructions
 - Use the provided Postman collection to test the API endpoints.
 
 ## Future Considerations
