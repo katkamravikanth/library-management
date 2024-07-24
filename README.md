@@ -17,6 +17,8 @@ This project is a Library Management System API built using Symfony and follows 
    `symfony server:start`
 5. To access API documentation
    `http://127.0.0.1:8000/api/doc`
+6. To run test cases
+   `php vendor/bin/phpunit`
 
 ## API Documentation
 
