@@ -1,0 +1,389 @@
+{
+    "info": {
+        "name": "Library Management API",
+        "description": "API Documentation for Library Management System",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "User",
+            "item": [
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users/{{userId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update User",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe Updated\",\n    \"email\": \"john_updated@example.com\",\n    \"password\": \"newpassword\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users/{{userId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users/{{userId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Borrow Book",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users/{{userId}}/borrow/{{bookId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}",
+                                "borrow",
+                                "{{bookId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Return Book",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/users/{{userId}}/return/{{bookId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{userId}}",
+                                "return",
+                                "{{bookId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Book",
+            "item": [
+                {
+                    "name": "Create Book",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Book Title\",\n    \"author\": \"Author Name\",\n    \"isbn\": \"1234567890\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/books",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "books"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Book by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/books/{{bookId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "books",
+                                "{{bookId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Book",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Updated Book Title\",\n    \"author\": \"Updated Author Name\",\n    \"isbn\": \"0987654321\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/books/{{bookId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "books",
+                                "{{bookId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Book",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/books/{{bookId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "books",
+                                "{{bookId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Books",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/books",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "books"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Borrowing",
+            "item": [
+                {
+                    "name": "Get All Borrowings",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/borrowings",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "borrowings"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Borrowing by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://127.0.0.1:8000/api/borrowings/{{borrowingId}}",
+                            "protocol": "http",
+                            "host": [
+                                "127.0.0.1:8000"
+                            ],
+                            "path": [
+                                "api",
+                                "borrowings",
+                                "{{borrowingId}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "userId",
+            "value": "1"
+        },
+        {
+            "key": "bookId",
+            "value": "1"
+        },
+        {
+            "key": "borrowingId",
+            "value": "1"
+        }
+    ]
+}
