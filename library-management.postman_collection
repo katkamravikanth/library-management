@@ -326,50 +326,6 @@
                     "response": []
                 }
             ]
-        },
-        {
-            "name": "Borrowing",
-            "item": [
-                {
-                    "name": "Get All Borrowings",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "http://127.0.0.1:8000/api/borrowings",
-                            "protocol": "http",
-                            "host": [
-                                "127.0.0.1:8000"
-                            ],
-                            "path": [
-                                "api",
-                                "borrowings"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Borrowing by ID",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "http://127.0.0.1:8000/api/borrowings/{{borrowingId}}",
-                            "protocol": "http",
-                            "host": [
-                                "127.0.0.1:8000"
-                            ],
-                            "path": [
-                                "api",
-                                "borrowings",
-                                "{{borrowingId}}"
-                            ]
-                        }
-                    },
-                    "response": []
-                }
-            ]
         }
     ],
     "variable": [
