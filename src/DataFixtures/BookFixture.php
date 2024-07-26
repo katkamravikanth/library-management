@@ -1,0 +1,29 @@
+<?php
+
+namespace App\DataFixtures;
+
+use App\Domain\Entity\Book;
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Persistence\ObjectManager;
+use Faker\Factory;
+
+class BookFixture extends Fixture
+{
+    public function load(ObjectManager $manager)
+    {
+        $faker = Factory::create();
+
+        // Create Books
+        for ($i = 1; $i <= 20; $i++) {
+            $book = new Book();
+            $book->setTitle($faker->sentence(3));
+            $book->setAuthor($faker->name);
+            $book->setIsbn($faker->isbn13);
+            $book->setStatus(Book::STATUS_AVAILABLE);
+
+            $manager->persist($book);
+        }
+
+        $manager->flush();
+    }
+}

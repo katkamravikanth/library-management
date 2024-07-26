@@ -9,6 +9,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: BorrowingRepository::class)]
 #[ORM\Table(name: "borrowings")]
+#[ORM\Index(name: "user_book_idx", columns: ["user_id", "book_id"])]
 #[ORM\HasLifecycleCallbacks]
 class Borrowing
 {

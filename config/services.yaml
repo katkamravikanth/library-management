@@ -22,3 +22,27 @@ services:
 
   # add more service definitions when explicit configuration is needed
   # please note that last definitions always *replace* previous ones# Alias the UserProviderInterface to a specific user provider
+
+  gedmo.mapping.driver.attribute:
+    class: Gedmo\Mapping\Driver\AttributeReader
+
+  gedmo.listener.softdeleteable:
+    class: Gedmo\SoftDeleteable\SoftDeleteableListener
+    tags:
+      - { name: doctrine.event_listener, event: "onFlush" }
+      - { name: doctrine.event_listener, event: "loadClassMetadata" }
+    calls:
+      - [setAnnotationReader, ["@gedmo.mapping.driver.attribute"]]
+
+  # Make sure value objects are not registered as services
+  App\Domain\ValueObject\:
+    resource: "../src/Domain/ValueObject"
+    public: false
+    autowire: false
+    autoconfigure: false
+
+  # Controllers are imported separately to make sure autowiring is enabled
+  # and it's possible to fetch services from the container via constructor injection.
+  App\Controller\:
+    resource: "../src/Controller"
+    tags: ["controller.service_arguments"]

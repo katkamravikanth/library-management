@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Domain\Entity\User;
 use App\Domain\Repository\UserRepository;
+use App\Domain\ValueObject\Email;
+use App\Domain\ValueObject\Name;
+use App\Domain\ValueObject\Password;
 use App\Application\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -11,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 
@@ -19,11 +23,13 @@ class UserController extends AbstractController
 {
     private UserService $userService;
     private UserPasswordHasherInterface $passwordHasher;
+    private ValidatorInterface $validator;
 
-    public function __construct(UserService $userService, UserPasswordHasherInterface $passwordHasher)
+    public function __construct(UserService $userService, UserPasswordHasherInterface $passwordHasher, ValidatorInterface $validator)
     {
         $this->userService = $userService;
         $this->passwordHasher = $passwordHasher;
+        $this->validator = $validator;
     }
 
     #[OA\Post(
@@ -40,21 +46,28 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('', methods: ['POST'])]
-    public function createUser(Request $request, EntityManagerInterface $entityManager): Response
+    public function createUser(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return $this->json(['message' => 'Invalid data'], Response::HTTP_BAD_REQUEST);
         }
 
-        $user = new User();
-        $user->setName($data['name']);
-        $user->setEmail($data['email']);
-        $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
-        $user->setPassword($hashedPassword);
+        $hashedPassword = $this->passwordHasher->hashPassword(new User(
+            new Name($data['name']),
+            new Email($data['email']),
+            new Password($data['password'])
+        ), $data['password']);
+        $user = $this->userService->createUser($data['name'], $data['email'], $hashedPassword);
 
-        $entityManager->persist($user);
-        $entityManager->flush();
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['message' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        }
 
         return $this->json($user, Response::HTTP_CREATED);
     }
@@ -82,24 +95,29 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['PUT'])]
-    public function updateUser(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    public function updateUser(Request $request, User $user): Response
     {
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return $this->json(['message' => 'Invalid data'], Response::HTTP_BAD_REQUEST);
         }
 
-        $user->setName($data['name']);
-        $user->setEmail($data['email']);
+        $hashedPassword = null;
         if (!empty($data['password'])) {
             $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
-            $user->setPassword($hashedPassword);
+        }
+        $updatedUser = $this->userService->updateUser($user, $data['name'], $data['email'], $hashedPassword);
+
+        $errors = $this->validator->validate($updatedUser);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['message' => $errorMessages], Response::HTTP_BAD_REQUEST);
         }
 
-        $entityManager->persist($user);
-        $entityManager->flush();
-
-        return $this->json($user);
+        return $this->json($updatedUser);
     }
 
     #[OA\Delete(
@@ -118,10 +136,9 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['DELETE'])]
-    public function deleteUser(User $user, EntityManagerInterface $entityManager): Response
+    public function deleteUser(User $user): Response
     {
-        $entityManager->remove($user);
-        $entityManager->flush();
+        $this->userService->deleteUser($user);
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
@@ -166,6 +183,10 @@ class UserController extends AbstractController
     #[Route('/{id}', methods: ['GET'])]
     public function getUserById(User $user): Response
     {
+        if ($user->isDeleted()) {
+            return $this->json(['message' => 'This user has been deleted.'], Response::HTTP_NOT_FOUND);
+        }
+
         return $this->json($user, 200, [], ['groups' => ['user']]);
     }
 

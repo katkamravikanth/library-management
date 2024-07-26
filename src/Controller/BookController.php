@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 
@@ -16,10 +17,12 @@ use OpenApi\Attributes as OA;
 class BookController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
+    private ValidatorInterface $validator;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, ValidatorInterface $validator)
     {
         $this->entityManager = $entityManager;
+        $this->validator = $validator;
     }
 
     #[OA\Post(
@@ -47,10 +50,23 @@ class BookController extends AbstractController
         $book->setTitle($data['title']);
         $book->setAuthor($data['author']);
         $book->setIsbn($data['isbn']);
-        $book->setIsAvailable(true);
+        $book->setStatus(Book::STATUS_AVAILABLE);
 
-        $this->entityManager->persist($book);
-        $this->entityManager->flush();
+        $errors = $this->validator->validate($book);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['message' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $this->entityManager->persist($book);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw $e; // Ensure the exception is re-thrown
+        }
 
         return $this->json(['status' => 'Book created!'], Response::HTTP_CREATED);
     }
@@ -89,8 +105,20 @@ class BookController extends AbstractController
         $book->setAuthor($data['author']);
         $book->setIsbn($data['isbn']);
 
-        $this->entityManager->persist($book);
-        $this->entityManager->flush();
+        $errors = $this->validator->validate($book);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['message' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw $e; // Ensure the exception is re-thrown
+        }
 
         return $this->json(['status' => 'Book updated!']);
     }
@@ -113,8 +141,14 @@ class BookController extends AbstractController
     #[Route('/{id}', methods: ['DELETE'])]
     public function deleteBook(Book $book): Response
     {
-        $this->entityManager->remove($book);
-        $this->entityManager->flush();
+        $book->setStatus(Book::STATUS_DELETED);
+
+        try {
+            $this->entityManager->remove($book);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            throw $e; // Ensure the exception is re-thrown
+        }
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
@@ -159,6 +193,10 @@ class BookController extends AbstractController
     #[Route('/{id}', methods: ['GET'])]
     public function getBook(Book $book): Response
     {
+        if ($book->isDeleted()) {
+            return $this->json(['message' => 'This book has been deleted.'], Response::HTTP_NOT_FOUND);
+        }
+
         return $this->json($book, 200, [], ['groups' => ['book']]);
     }
 }
