@@ -45,7 +45,7 @@ class UserController extends AbstractController
             )
         ]
     )]
-    #[Route('', methods: ['POST'])]
+    #[Route('/new', methods: ['POST'])]
     public function createUser(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
