@@ -23,6 +23,7 @@ class UserControllerTest extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
+        $this->client->followRedirects(true);
         $this->manager = static::getContainer()->get('doctrine')->getManager();
     }
 
