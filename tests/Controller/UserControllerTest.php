@@ -4,10 +4,8 @@ namespace App\Tests\Controller;
 
 use App\Domain\Entity\Book;
 use App\Domain\Entity\User;
-use App\Domain\ValueObject\Email;
-use App\Domain\ValueObject\Name;
-use App\Domain\ValueObject\Password;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +14,8 @@ class UserControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private EntityManagerInterface $manager;
+    private EntityRepository $repository;
+    private EntityRepository $bookRepository;
     private string $path = '/api/users/';
 
     protected function setUp(): void
@@ -23,45 +23,8 @@ class UserControllerTest extends WebTestCase
         $this->client = static::createClient();
         $this->client->followRedirects(true);
         $this->manager = static::getContainer()->get('doctrine')->getManager();
-    }
-
-    public function testCreateUser()
-    {
-        $this->client->request('POST', $this->path . 'new', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
-            'name' => 'John Doe',
-            'email' => 'john.doe.new@example.com',
-            'password' => 'password123'
-        ]));
-
-        $this->assertEquals(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
-    }
-
-    public function testUpdateUser()
-    {
-        $fixture = new User(new Name('John Doe'), new Email('edit.user@example.com'), new Password('password'));
-
-        $this->manager->persist($fixture);
-        $this->manager->flush();
-
-        $this->client->request('PUT', sprintf('%s%s', $this->path, $fixture->getId()), [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
-            'name' => 'John Smith',
-            'email' => 'john.smith.edit@example.com',
-            'password' => 'newpassword123'
-        ]));
-
-        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
-    }
-
-    public function testDeleteUser()
-    {
-        $fixture = new User(new Name('John Doe'), new Email('remove.user@example.com'), new Password('password'));
-
-        $this->manager->persist($fixture);
-        $this->manager->flush();
-
-        $this->client->request('DELETE', sprintf('%s%s', $this->path, $fixture->getId()));
-
-        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+        $this->repository = $this->manager->getRepository(User::class);
+        $this->bookRepository = $this->manager->getRepository(Book::class);
     }
 
     public function testGetAllUsers()
@@ -73,30 +36,146 @@ class UserControllerTest extends WebTestCase
 
     public function testGetUserById()
     {
-        $fixture = new User(new Name('John Doe'), new Email('show.user@example.com'), new Password('password'));
+        $user = $this->repository->findOneBy(['email.email' => 'user1@example.com']);
 
-        $this->manager->persist($fixture);
-        $this->manager->flush();
-
-        $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
+        $this->client->request('GET', sprintf('%s%s', $this->path, $user->getId()));
 
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
     }
 
+    public function testCreateUser()
+    {
+        $this->client->request('POST', $this->path . 'new', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+            'name' => 'John Doe',
+            'email' => 'john.doe.new@example.com',
+            'password' => 'password123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User created!', $responseContent['status']);
+    }
+
+    public function testCreateUserWithMissingName()
+    {
+        $this->client->request('POST', $this->path . 'new', [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ], json_encode([
+            'email' => 'john.doe.new@example.com',
+            'password' => 'password123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Name, email, and password are required fields', $responseContent['message']);
+    }
+
+    public function testCreateUserWithMissingEmail()
+    {
+        $this->client->request('POST', $this->path . 'new', [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ], json_encode([
+            'name' => 'John Doe',
+            'password' => 'password123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Name, email, and password are required fields', $responseContent['message']);
+    }
+
+    public function testCreateUserWithMissingPassword()
+    {
+        $this->client->request('POST', $this->path . 'new', [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ], json_encode([
+            'name' => 'John Doe',
+            'email' => 'john.doe.new@example.com'
+        ]));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Name, email, and password are required fields', $responseContent['message']);
+    }
+
+    public function testUpdateUserWithMissingName()
+    {
+        $user = $this->repository->findOneBy(['email.email' => 'user1@example.com']);
+
+        $this->client->request('PUT', sprintf('%s%s', $this->path, $user->getId()), [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ], json_encode([
+            'email' => 'john.smith.edit@example.com',
+            'password' => 'newpassword123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Name and email are required fields', $responseContent['message']);
+    }
+
+    public function testUpdateUserWithMissingEmail()
+    {
+        $user = $this->repository->findOneBy(['email.email' => 'user1@example.com']);
+
+        $this->client->request('PUT', sprintf('%s%s', $this->path, $user->getId()), [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ], json_encode([
+            'name' => 'John Smith',
+            'password' => 'newpassword123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Name and email are required fields', $responseContent['message']);
+    }
+
+    public function testUpdateUser()
+    {
+        $user = $this->repository->findOneBy(['email.email' => 'user1@example.com']);
+
+        $this->client->request('PUT', sprintf('%s%s', $this->path, $user->getId()), [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ], json_encode([
+            'name' => 'John Smith',
+            'email' => 'john.smith.edit@example.com',
+            'password' => 'newpassword123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User updated!', $responseContent['status']);
+    }
+
+    public function testDeleteUserWithInvalidId()
+    {
+        $invalidUserId = 999999; // Assuming this ID does not exist
+
+        $this->client->request('DELETE', sprintf('%s%s', $this->path, $invalidUserId));
+
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User not found.', $responseContent['message']);
+    }
+
+    public function testDeleteUser()
+    {
+        $user = $this->repository->findOneBy(['email.email' => 'john.smith.edit@example.com']);
+
+        $this->client->request('DELETE', sprintf('%s%s', $this->path, $user->getId()));
+
+        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+
+        $deletedUser = $this->repository->findOneBy(['email.email' => 'john.smith.edit@example.com']);
+        $this->assertNull($deletedUser);
+    }
+
     public function testBorrowBook()
     {
-        $userFixture = new User(new Name('John Doe'), new Email('borrow.user@example.com'), new Password('password'));
-        $bookFixture = new Book();
-        $bookFixture->setTitle('Book Title 1');
-        $bookFixture->setAuthor('Book Author 1');
-        $bookFixture->setIsbn('0-19-853453-1');
-        $bookFixture->setStatus(Book::STATUS_AVAILABLE);
+        $user = $this->repository->findOneBy(['email.email' => 'user2@example.com']);
+        $book = $this->bookRepository->findOneBy(['title'=> 'Book Title 2']);
 
-        $this->manager->persist($userFixture);
-        $this->manager->persist($bookFixture);
-        $this->manager->flush();
-
-        $this->client->request('POST', $this->path . $userFixture->getId() . '/borrow/' . $bookFixture->getId());
+        $this->client->request('POST', $this->path . $user->getId() . '/borrow/' . $book->getId());
 
         $this->assertEquals(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
         $responseContent = json_decode($this->client->getResponse()->getContent(), true);
@@ -105,24 +184,56 @@ class UserControllerTest extends WebTestCase
 
     public function testReturnBook()
     {
-        $userFixture = new User(new Name('John Doe'), new Email('return.user@example.com'), new Password('password'));
-        $bookFixture = new Book();
-        $bookFixture->setTitle('Book Title 1');
-        $bookFixture->setAuthor('Book Author 1');
-        $bookFixture->setIsbn('0-19-853453-1');
-        $bookFixture->setStatus(Book::STATUS_AVAILABLE);
-
-        $this->manager->persist($userFixture);
-        $this->manager->persist($bookFixture);
-        $this->manager->flush();
-
-        $this->client->request('POST', $this->path . $userFixture->getId() . '/borrow/' . $bookFixture->getId());
-
-        $this->client->request('POST', $this->path . $userFixture->getId() . '/return/' . $bookFixture->getId());
-
+        $user = $this->repository->findOneBy(['email.email' => 'user2@example.com']);
+        $book = $this->bookRepository->findOneBy(['title'=> 'Book Title 2']);
+    
+        $this->client->request('POST', $this->path . $user->getId() . '/return/' . $book->getId(), [], [], [
+            'CONTENT_TYPE' => 'application/json'
+        ]);
+    
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
         $responseContent = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('Book returned!', $responseContent['status']);
+    }
+
+    public function testBorrowBookWithInvalidUser()
+    {
+        $this->client->request('POST', $this->path . '999/borrow/1'); // Invalid user ID
+
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User not found.', $responseContent['message']);
+    }
+
+    public function testBorrowBookWithInvalidBook()
+    {
+        $user = $this->repository->findOneBy(['email.email' => 'user2@example.com']);
+
+        $this->client->request('POST', $this->path . $user->getId() . '/borrow/999'); // Invalid book ID
+
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Book not found.', $responseContent['message']);
+    }
+
+    public function testReturnBookWithInvalidUser()
+    {
+        $this->client->request('POST', $this->path . '999/return/1'); // Invalid user ID
+
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User not found.', $responseContent['message']);
+    }
+
+    public function testReturnBookWithInvalidBook()
+    {
+        $user = $this->repository->findOneBy(['email.email' => 'user2@example.com']);
+
+        $this->client->request('POST', $this->path . $user->getId() . '/return/999'); // Invalid book ID
+
+        $this->assertEquals(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Book not found.', $responseContent['message']);
     }
 
     protected function restoreExceptionHandler(): void

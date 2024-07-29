@@ -4,6 +4,8 @@ namespace App\Domain\Entity;
 
 use App\Domain\Repository\BorrowingRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
+use Gedmo\SoftDeleteable\Traits\SoftDeleteableEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -11,9 +13,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: "borrowings")]
 #[ORM\Index(name: "user_book_idx", columns: ["user_id", "book_id"])]
 #[ORM\HasLifecycleCallbacks]
+#[Gedmo\SoftDeleteable(fieldName: 'deletedAt', timeAware: false)]
 class Borrowing
 {
     use TimestampableEntity;
+    use SoftDeleteableEntity;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

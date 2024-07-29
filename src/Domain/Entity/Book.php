@@ -2,6 +2,7 @@
 
 namespace App\Domain\Entity;
 
+use App\Domain\Enum\BookStatus;
 use App\Domain\Repository\BookRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -19,10 +20,6 @@ class Book
 {
     use TimestampableEntity;
     use SoftDeleteableEntity;
-
-    const STATUS_AVAILABLE = 'Available';
-    const STATUS_BORROWED = 'Borrowed';
-    const STATUS_DELETED = 'Deleted';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -51,7 +48,7 @@ class Book
     #[Groups(['book'])]
     private $isbn;
 
-    #[ORM\Column(type: "string", length: 15)]
+    #[ORM\Column(type: 'string', enumType: BookStatus::class)]
     #[Groups(['book'])]
     private $status;
 
@@ -62,6 +59,7 @@ class Book
     public function __construct()
     {
         $this->borrowings = new ArrayCollection();
+        $this->status = BookStatus::AVAILABLE; // Default status
     }
 
     public function getId(): ?int
@@ -105,12 +103,12 @@ class Book
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): BookStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): self
+    public function setStatus(BookStatus $status): self
     {
         $this->status = $status;
 
@@ -127,15 +125,15 @@ class Book
 
     public function borrow(): void
     {
-        if ($this->status !== self::STATUS_AVAILABLE) {
+        if ($this->status !== BookStatus::AVAILABLE) {
             throw new \Exception("Book not available");
         }
 
-        $this->status = self::STATUS_BORROWED;
+        $this->status = BookStatus::BORROWED;
     }
 
     public function returnBook(): void
     {
-        $this->status = self::STATUS_AVAILABLE;
+        $this->status = BookStatus::AVAILABLE;
     }
 }

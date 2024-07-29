@@ -2,21 +2,24 @@
 
 namespace App\Controller;
 
+use App\Application\Service\UserService;
 use App\Domain\Entity\User;
 use App\Domain\Repository\UserRepository;
 use App\Domain\ValueObject\Email;
 use App\Domain\ValueObject\Name;
 use App\Domain\ValueObject\Password;
-use App\Application\Service\UserService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Exception\UserNotFoundException;
+use App\Exception\BookNotFoundException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Nelmio\ApiDocBundle\Annotation\Model;
-use OpenApi\Attributes as OA;
 
 #[Route('/api/users')]
 class UserController extends AbstractController
@@ -53,6 +56,11 @@ class UserController extends AbstractController
             return $this->json(['message' => 'Invalid data'], Response::HTTP_BAD_REQUEST);
         }
 
+        // Validate required fields
+        if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
+            return $this->json(['message' => 'Name, email, and password are required fields'], Response::HTTP_BAD_REQUEST);
+        }
+
         $hashedPassword = $this->passwordHasher->hashPassword(new User(
             new Name($data['name']),
             new Email($data['email']),
@@ -60,16 +68,15 @@ class UserController extends AbstractController
         ), $data['password']);
         $user = $this->userService->createUser($data['name'], $data['email'], $hashedPassword);
 
-        $errors = $this->validator->validate($user);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-            return $this->json(['message' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        try {
+            $this->userService->saveUser($user);
+        } catch (UniqueConstraintViolationException $e) {
+            return $this->json(['message' => 'A user with this email already exists.'], Response::HTTP_CONFLICT);
+        } catch (\Exception $e) {
+            return $this->json(['message' => 'An error occurred while creating the user.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        return $this->json($user, Response::HTTP_CREATED);
+        return $this->json(['status' => 'User created!'], Response::HTTP_CREATED);
     }
 
     #[OA\Put(
@@ -95,11 +102,22 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['PUT'])]
-    public function updateUser(Request $request, User $user): Response
+    public function updateUser(Request $request, int $id, UserRepository $userRepository): Response
     {
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return $this->json(['message' => 'Invalid data'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Fetch user entity
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Validate required fields
+        if (empty($data['name']) || empty($data['email'])) {
+            return $this->json(['message' => 'Name and email are required fields'], Response::HTTP_BAD_REQUEST);
         }
 
         $hashedPassword = null;
@@ -108,16 +126,15 @@ class UserController extends AbstractController
         }
         $updatedUser = $this->userService->updateUser($user, $data['name'], $data['email'], $hashedPassword);
 
-        $errors = $this->validator->validate($updatedUser);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-            return $this->json(['message' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        try {
+            $this->userService->saveUser($updatedUser);
+        } catch (UniqueConstraintViolationException $e) {
+            return $this->json(['message' => 'A user with this email already exists.'], Response::HTTP_CONFLICT);
+        } catch (\Exception $e) {
+            return $this->json(['message' => 'An error occurred while updating the user.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        return $this->json($updatedUser);
+        return $this->json(['status' => 'User updated!']);
     }
 
     #[OA\Delete(
@@ -136,9 +153,20 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['DELETE'])]
-    public function deleteUser(User $user): Response
+    public function deleteUser(int $id, UserRepository $userRepository): Response
     {
-        $this->userService->deleteUser($user);
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json(['message' => 'User not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            $this->userService->deleteUser($user);
+        } catch (ForeignKeyConstraintViolationException $e) {
+            return $this->json(['message' => 'Foreign key constraint violation.'], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return $this->json(['message' => 'An error occurred while deleting the user.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
@@ -181,8 +209,13 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['GET'])]
-    public function getUserById(User $user): Response
+    public function getUserById(int $id, UserRepository $userRepository): Response
     {
+        $user = $userRepository->find($id);
+        if (!$user) {
+            return $this->json(['message' => 'User not found.'], Response::HTTP_NOT_FOUND);
+        }
+
         if ($user->isDeleted()) {
             return $this->json(['message' => 'This user has been deleted.'], Response::HTTP_NOT_FOUND);
         }
@@ -217,8 +250,12 @@ class UserController extends AbstractController
         try {
             $this->userService->borrowBook($user, $book);
             return $this->json(['status' => 'Book borrowed!'], Response::HTTP_CREATED);
+        } catch (UserNotFoundException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        } catch (BookNotFoundException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
-            return $this->json(['status' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -244,8 +281,12 @@ class UserController extends AbstractController
         try {
             $this->userService->returnBook($user, $book);
             return $this->json(['status' => 'Book returned!']);
+        } catch (UserNotFoundException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        } catch (BookNotFoundException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
-            return $this->json(['status' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 }

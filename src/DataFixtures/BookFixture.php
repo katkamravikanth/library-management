@@ -16,10 +16,9 @@ class BookFixture extends Fixture
         // Create Books
         for ($i = 1; $i <= 20; $i++) {
             $book = new Book();
-            $book->setTitle($faker->sentence(3));
-            $book->setAuthor($faker->name);
-            $book->setIsbn($faker->isbn13);
-            $book->setStatus(Book::STATUS_AVAILABLE);
+            $book->setTitle("Book Title {$i}");
+            $book->setAuthor("Author Name {$i}");
+            $book->setIsbn($faker->isbn10);
 
             $manager->persist($book);
         }

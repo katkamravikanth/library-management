@@ -2,6 +2,9 @@
 
 namespace App\Domain\Entity;
 
+use App\Domain\Entity\Borrowing;
+use App\Domain\Enum\BookStatus;
+use App\Domain\Enum\UserStatus;
 use App\Domain\Repository\UserRepository;
 use App\Domain\ValueObject\Email;
 use App\Domain\ValueObject\Name;
@@ -14,7 +17,6 @@ use Gedmo\SoftDeleteable\Traits\SoftDeleteableEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: "users")]
@@ -46,6 +48,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user'])]
     private $roles = [];
 
+    #[ORM\Column(type: 'string', enumType: UserStatus::class)]
+    #[Groups(['user'])]
+    private $status;
+
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Borrowing::class, cascade: ['persist', 'remove'])]
     #[Groups(['user'])]
     private $borrowings;
@@ -56,6 +62,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->email = $email;
         $this->password = $password;
         $this->roles = ['ROLE_USER'];
+        $this->status = UserStatus::ACTIVE; // Default status
         $this->borrowings = new ArrayCollection();
     }
 
@@ -120,6 +127,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getStatus(): UserStatus
+    {
+        return $this->status;
+    }
+
+    public function setStatus(UserStatus $status): self
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
     /**
      * @see PasswordAuthenticatedUserInterface
      */
@@ -143,51 +162,5 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getBorrowings(): Collection
     {
         return $this->borrowings;
-    }
-
-    public function borrowBook(Book $book): Borrowing
-    {
-        if (count($this->activeBorrowedBooks()) >= 5) {
-            throw new \Exception("User has reached the maximum number of borrowed books");
-        }
-
-        if ($book->getStatus() !== Book::STATUS_AVAILABLE) {
-            throw new \Exception("Book is not available");
-        }
-
-        $borrowing = new Borrowing($this, $book);
-        $this->borrowings[] = $borrowing;
-        $book->borrow();
-
-        return $borrowing;
-    }
-
-    public function returnBook(Book $book): void
-    {
-        $borrowing = $this->activeBorrowedBooks()->filter(
-            fn (Borrowing $borrowing) => $borrowing->getBook() === $book
-        )->first();
-
-        if (!$borrowing) {
-            throw new \Exception("This borrowing record does not exist or book is already returned");
-        }
-
-        $borrowing->return();
-    }
-
-    public function hasBorrowedBook(Book $book): bool
-    {
-        $borrowing = $this->activeBorrowedBooks()->filter(
-            fn (Borrowing $borrowing) => $borrowing->getBook() === $book
-        );
-
-        return $borrowing->count() > 0;
-    }
-
-    public function activeBorrowedBooks(): Collection
-    {
-        return $this->borrowings->filter(
-            fn (Borrowing $borrowing) => $borrowing->getCheckinDate() === null
-        );
     }
 }

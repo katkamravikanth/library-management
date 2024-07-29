@@ -27,8 +27,8 @@ class UserFixture extends Fixture
         // Create Users
         for ($i = 1; $i <= 10; $i++) {
             $user = new User(
-                new Name($faker->name),
-                new Email($faker->unique()->safeEmail),
+                new Name("User {$i}"),
+                new Email("user{$i}@example.com"),
                 new Password('password')
             );
             $hashedPassword = $this->passwordHasher->hashPassword($user, 'password');

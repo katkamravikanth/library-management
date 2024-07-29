@@ -3,152 +3,142 @@
 namespace App\Tests\Service;
 
 use App\Application\Service\UserService;
-use App\Domain\Entity\User;
 use App\Domain\Entity\Book;
 use App\Domain\Entity\Borrowing;
+use App\Domain\Entity\User;
+use App\Domain\Repository\BookRepository;
+use App\Domain\Repository\UserRepository;
 use App\Domain\ValueObject\Email;
 use App\Domain\ValueObject\Name;
 use App\Domain\ValueObject\Password;
-use App\Domain\Repository\UserRepository;
-use App\Domain\Repository\BookRepository;
+use App\Exception\UserNotFoundException;
+use App\Exception\BookNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class UserServiceTest extends TestCase
+class UserServiceTest extends KernelTestCase
 {
-    private $userRepository;
-    private $bookRepository;
-    private $entityManager;
-    private $userService;
+    private EntityManagerInterface $entityManager;
+    private UserRepository $userRepository;
+    private BookRepository $bookRepository;
+    private ValidatorInterface $validator;
+    private UserService $userService;
 
     protected function setUp(): void
     {
-        $this->userRepository = $this->createMock(UserRepository::class);
-        $this->bookRepository = $this->createMock(BookRepository::class);
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
-
-        $this->userService = new UserService(
-            $this->userRepository,
-            $this->bookRepository,
-            $this->entityManager
-        );
+        self::bootKernel();
+        $container = self::getContainer();
+        
+        $this->entityManager = $container->get(EntityManagerInterface::class);
+        $this->userRepository = $container->get(UserRepository::class);
+        $this->bookRepository = $container->get(BookRepository::class);
+        $this->validator = $container->get(ValidatorInterface::class);
+        $this->userService = new UserService($this->userRepository, $this->bookRepository, $this->entityManager, $this->validator);
     }
 
     public function testCreateUser(): void
     {
-        $name = 'Test User';
-        $email = 'test@example.com';
-        $password = 'password123';
-
-        $this->entityManager->expects($this->once())
-            ->method('persist')
-            ->with($this->isInstanceOf(User::class));
-
-        $this->entityManager->expects($this->once())
-            ->method('flush');
-
-        $user = $this->userService->createUser($name, $email, $password);
+        $user = $this->userService->createUser('John Doe', 'john.doe@example.com', 'password123');
+        $this->userService->saveUser($user);
 
         $this->assertInstanceOf(User::class, $user);
-        $this->assertEquals($name, $user->getName()->getValue());
-        $this->assertEquals($email, $user->getEmail()->getValue());
-        $this->assertEquals($password, $user->getPassword());
+        $this->assertEquals('John Doe', $user->getName()->getValue());
+        $this->assertEquals('john.doe@example.com', $user->getEmail()->getValue());
     }
 
     public function testUpdateUser(): void
     {
-        $user = $this->createMock(User::class);
-        $name = 'Updated User';
-        $email = 'updated@example.com';
-        $password = 'newpassword123';
+        $user = $this->userRepository->findOneBy(['email.email' => 'john.doe@example.com']);
 
-        $user->expects($this->once())
-            ->method('setName')
-            ->with($this->isInstanceOf(Name::class));
+        $updatedUser = $this->userService->updateUser($user, 'Jane Doe', 'jane.doe@example.com', 'newpassword123');
+        $this->userService->saveUser($updatedUser);
 
-        $user->expects($this->once())
-            ->method('setEmail')
-            ->with($this->isInstanceOf(Email::class));
-
-        if ($password !== null) {
-            $user->expects($this->once())
-                ->method('setPassword')
-                ->with($this->isInstanceOf(Password::class));
-        }
-
-        $this->entityManager->expects($this->once())
-            ->method('flush');
-
-        $updatedUser = $this->userService->updateUser($user, $name, $email, $password);
-
-        $this->assertInstanceOf(User::class, $updatedUser);
+        $this->assertEquals('Jane Doe', $updatedUser->getName()->getValue());
+        $this->assertEquals('jane.doe@example.com', $updatedUser->getEmail()->getValue());
     }
 
     public function testDeleteUser(): void
     {
-        $user = $this->createMock(User::class);
-
-        $this->entityManager->expects($this->once())
-            ->method('remove')
-            ->with($user);
-
-        $this->entityManager->expects($this->once())
-            ->method('flush');
+        $user = $this->userRepository->findOneBy(['email.email' => 'jane.doe@example.com']);
 
         $this->userService->deleteUser($user);
+
+        $deletedUser = $this->userRepository->findOneBy(['email.email' => 'jane.doe@example.com']);
+        $this->assertNull($deletedUser);
     }
 
-    public function testBorrowBookSuccess(): void
+    public function testBorrowBook(): void
     {
-        $user = $this->createMock(User::class);
-        $book = $this->createMock(Book::class);
-        $borrowing = $this->createMock(Borrowing::class);
+        $user = $this->userRepository->findOneBy(['email.email' => 'user3@example.com']);
+        $book = $this->bookRepository->findOneBy(['title' => 'Book Title 3']);
 
-        $this->userRepository->method('find')->willReturn($user);
-        $this->bookRepository->method('find')->willReturn($book);
+        $this->userService->borrowBook($user->getId(), $book->getId());
 
-        $user->method('borrowBook')->with($book)->willReturn($borrowing);
-
-        $this->entityManager->expects($this->once())->method('persist')->with($borrowing);
-        $this->entityManager->expects($this->once())->method('flush');
-
-        $this->userService->borrowBook(1, 1);
+        $borrowing = $this->entityManager->getRepository(Borrowing::class)->findOneBy(['user' => $user, 'book' => $book]);
+        $this->assertInstanceOf(Borrowing::class, $borrowing);
     }
 
-    public function testBorrowBookUserOrBookNotFound(): void
+    public function testReturnBook()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('User or Book not found');
+        $user = $this->userRepository->findOneBy(['email.email' => 'user3@example.com']);
+        $book = $this->bookRepository->findOneBy(['title' => 'Book Title 3']);
 
-        $this->userRepository->method('find')->willReturn(null);
-        $this->bookRepository->method('find')->willReturn($this->createMock(Book::class));
+        $this->userService->returnBook($user->getId(), $book->getId());
 
-        $this->userService->borrowBook(1, 1);
+        $borrowing = $this->entityManager->getRepository(Borrowing::class)->findOneBy(['user' => $user, 'book' => $book]);
+        $this->assertNotNull($borrowing->getCheckinDate());
     }
 
-    public function testReturnBookSuccess(): void
+    public function testBorrowBookUserNotFound()
     {
-        $user = $this->createMock(User::class);
-        $book = $this->createMock(Book::class);
+        $book = $this->bookRepository->findOneBy(['title' => 'Book Title 4']);
 
-        $this->userRepository->method('find')->willReturn($user);
-        $this->bookRepository->method('find')->willReturn($book);
-
-        $user->expects($this->once())->method('returnBook')->with($book);
-
-        $this->entityManager->expects($this->once())->method('flush');
-
-        $this->userService->returnBook(1, 1);
+        $this->expectException(UserNotFoundException::class);
+        $this->userService->borrowBook(999, $book->getId());
     }
 
-    public function testReturnBookUserOrBookNotFound(): void
+    public function testBorrowBookBookNotFound()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('User or Book not found');
+        $user = $this->userRepository->findOneBy(['email.email' => 'user4@example.com']);
 
-        $this->userRepository->method('find')->willReturn(null);
-        $this->bookRepository->method('find')->willReturn($this->createMock(Book::class));
+        $this->expectException(BookNotFoundException::class);
+        $this->userService->borrowBook($user->getId(), 999);
+    }
 
-        $this->userService->returnBook(1, 1);
+    public function testReturnBookUserNotFound()
+    {
+        $book = $this->bookRepository->findOneBy(['title' => 'Book Title 4']);
+
+        $this->expectException(UserNotFoundException::class);
+        $this->userService->returnBook(999, 1);
+    }
+
+    public function testReturnBookBookNotFound()
+    {
+        $user = $this->userRepository->findOneBy(['email.email' => 'user4@example.com']);
+
+        $this->expectException(BookNotFoundException::class);
+        $this->userService->returnBook($user->getId(), 999);
+    }
+
+    protected function restoreExceptionHandler(): void
+    {
+        while (true) {
+            $previousHandler = set_exception_handler(static fn() => null);
+            restore_exception_handler();
+
+            if ($previousHandler === null) {
+                break;
+            }
+
+            restore_exception_handler();
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->restoreExceptionHandler();
     }
 }

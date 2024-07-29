@@ -5,6 +5,7 @@ namespace App\Tests\Domain\Entity;
 use App\Domain\Entity\Book;
 use App\Domain\Entity\Borrowing;
 use App\Domain\Entity\User;
+use App\Domain\Enum\BookStatus;
 use App\Domain\ValueObject\Email;
 use App\Domain\ValueObject\Name;
 use App\Domain\ValueObject\Password;
@@ -20,7 +21,7 @@ class BorrowingTest extends TestCase
         $user = new User($name, $email, $password);
 
         $book = new Book();
-        $book->setStatus(Book::STATUS_AVAILABLE);
+        $book->setStatus(BookStatus::AVAILABLE);
 
         $borrowing = new Borrowing($user, $book);
 
@@ -37,7 +38,7 @@ class BorrowingTest extends TestCase
         $user = new User($name, $email, $password);
 
         $book = new Book();
-        $book->setStatus(Book::STATUS_AVAILABLE);
+        $book->setStatus(BookStatus::AVAILABLE);
 
         $borrowing = new Borrowing($user, $book);
 
@@ -59,7 +60,7 @@ class BorrowingTest extends TestCase
         $user = new User($name, $email, $password);
 
         $book = new Book();
-        $book->setStatus(Book::STATUS_AVAILABLE);
+        $book->setStatus(BookStatus::AVAILABLE);
 
         $borrowing = new Borrowing($user, $book);
         $borrowing->return();
