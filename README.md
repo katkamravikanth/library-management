@@ -46,9 +46,9 @@ This project is a Library Management System API built using Symfony and follows 
 
 ## Screenshots
 
-![screenshot](screenshots/api_doc.png)
-![screenshot](screenshots/postman.png)
-![screenshot](screenshots/unit_test_case.png)
+![screenshot](screenshot/api_doc.png)
+![screenshot](screenshot/postman.png)
+![screenshot](screenshot/unit_test_case.png)
 
 ## Future Considerations
 
