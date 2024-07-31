@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Application\Service\UserService;
+use App\Domain\Entity\Borrowing;
 use App\Domain\Entity\User;
 use App\Domain\Repository\UserRepository;
 use App\Domain\ValueObject\Email;
@@ -209,8 +210,13 @@ class UserController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['GET'])]
-    public function getUserById(int $id, UserRepository $userRepository): Response
+    public function getUserById($id, UserRepository $userRepository): Response
     {
+        $intId = (int) $id;
+        if (!is_numeric($id) || $intId <= 0) {
+            return $this->json(['message' => 'Invalid ID type. ID must be a positive integer.'], Response::HTTP_BAD_REQUEST);
+        }
+
         $user = $userRepository->find($id);
         if (!$user) {
             return $this->json(['message' => 'User not found.'], Response::HTTP_NOT_FOUND);

@@ -18,7 +18,7 @@ class BookFixture extends Fixture
             $book = new Book();
             $book->setTitle("Book Title {$i}");
             $book->setAuthor("Author Name {$i}");
-            $book->setIsbn($faker->isbn10);
+            $book->setIsbn($faker->isbn10());
 
             $manager->persist($book);
         }

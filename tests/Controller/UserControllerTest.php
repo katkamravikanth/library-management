@@ -21,7 +21,9 @@ class UserControllerTest extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
+        // When dealing with actions that lead to redirects, ensuring that assertions are made on the final response after all redirects have been followed.
         $this->client->followRedirects(true);
+        
         $this->manager = static::getContainer()->get('doctrine')->getManager();
         $this->repository = $this->manager->getRepository(User::class);
         $this->bookRepository = $this->manager->getRepository(Book::class);
@@ -34,6 +36,15 @@ class UserControllerTest extends WebTestCase
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
     }
 
+    public function testGetUserByIdWithInvalidId()
+    {
+        $this->client->request('GET', sprintf('%s%s', $this->path, 'invalid-id'));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Invalid ID type. ID must be a positive integer.', $responseContent['message']);
+    }
+
     public function testGetUserById()
     {
         $user = $this->repository->findOneBy(['email.email' => 'user1@example.com']);
@@ -41,19 +52,6 @@ class UserControllerTest extends WebTestCase
         $this->client->request('GET', sprintf('%s%s', $this->path, $user->getId()));
 
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
-    }
-
-    public function testCreateUser()
-    {
-        $this->client->request('POST', $this->path . 'new', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
-            'name' => 'John Doe',
-            'email' => 'john.doe.new@example.com',
-            'password' => 'password123'
-        ]));
-
-        $this->assertEquals(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
-        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
-        $this->assertEquals('User created!', $responseContent['status']);
     }
 
     public function testCreateUserWithMissingName()
@@ -96,6 +94,19 @@ class UserControllerTest extends WebTestCase
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
         $responseContent = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals('Name, email, and password are required fields', $responseContent['message']);
+    }
+
+    public function testCreateUser()
+    {
+        $this->client->request('POST', $this->path . 'new', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+            'name' => 'John Doe',
+            'email' => 'john.doe.new@example.com',
+            'password' => 'password123'
+        ]));
+
+        $this->assertEquals(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User created!', $responseContent['status']);
     }
 
     public function testUpdateUserWithMissingName()

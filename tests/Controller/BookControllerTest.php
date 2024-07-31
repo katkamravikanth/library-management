@@ -20,7 +20,7 @@ class BookControllerTest extends WebTestCase
     protected function setUp(): void
     {
         $this->client = static::createClient();
-        $this->client->followRedirects(true);
+        $this->client->followRedirects(true);//
         $this->manager = static::getContainer()->get('doctrine')->getManager();
         $this->repository = $this->manager->getRepository(Book::class);
     }
@@ -32,6 +32,15 @@ class BookControllerTest extends WebTestCase
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
         $responseContent = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertIsArray($responseContent);
+    }
+
+    public function testGetBookByIdWithInvalidId()
+    {
+        $this->client->request('GET', sprintf('%s%s', $this->path, 'invalid-id'));
+
+        $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Invalid ID type. ID must be a positive integer.', $responseContent['message']);
     }
 
     public function testGetBookById()
@@ -51,7 +60,7 @@ class BookControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json'
         ], json_encode([
             'author' => 'Test Author',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
@@ -67,7 +76,7 @@ class BookControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json'
         ], json_encode([
             'title' => 'Test Book',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
@@ -113,7 +122,7 @@ class BookControllerTest extends WebTestCase
         ], json_encode([
             'title' => 'Test Book',
             'author' => 'Test Author',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
@@ -131,7 +140,7 @@ class BookControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json'
         ], json_encode([
             'author' => 'New Author',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
@@ -149,7 +158,7 @@ class BookControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json'
         ], json_encode([
             'title' => 'New Title',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
@@ -201,7 +210,7 @@ class BookControllerTest extends WebTestCase
         ], json_encode([
             'title' => 'New Title',
             'author' => 'New Author',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
@@ -219,7 +228,7 @@ class BookControllerTest extends WebTestCase
         ], json_encode([
             'title' => 'Updated Test Book',
             'author' => 'Updated Test Author',
-            'isbn' => $faker->isbn10
+            'isbn' => $faker->isbn10()
         ]));
 
         $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());

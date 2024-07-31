@@ -71,9 +71,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function getName(): Name
+    public function getName(): string
     {
-        return $this->name;
+        return (string) $this->name;
     }
 
     public function setName(Name $name): self
@@ -83,9 +83,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getEmail(): Email
+    public function getEmail(): string
     {
-        return $this->email;
+        return (string) $this->email;
     }
 
     public function setEmail(Email $email): self

@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Application\Service\BookService;
 use App\Domain\Entity\Book;
-use App\Domain\Enum\BookStatus;
 use App\Domain\Repository\BookRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
@@ -203,8 +202,13 @@ class BookController extends AbstractController
         ]
     )]
     #[Route('/{id}', methods: ['GET'])]
-    public function getBook(int $id, BookRepository $bookRepository): Response
+    public function getBookById($id, BookRepository $bookRepository): Response
     {
+        $intId = (int) $id;
+        if (!is_numeric($id) || $intId <= 0) {
+            return $this->json(['message' => 'Invalid ID type. ID must be a positive integer.'], Response::HTTP_BAD_REQUEST);
+        }
+
         $book = $bookRepository->find($id);
         if (!$book) {
             return $this->json(['message' => 'Book not found.'], Response::HTTP_NOT_FOUND);

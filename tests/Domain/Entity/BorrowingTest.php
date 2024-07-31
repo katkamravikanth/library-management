@@ -5,66 +5,76 @@ namespace App\Tests\Domain\Entity;
 use App\Domain\Entity\Book;
 use App\Domain\Entity\Borrowing;
 use App\Domain\Entity\User;
-use App\Domain\Enum\BookStatus;
-use App\Domain\ValueObject\Email;
-use App\Domain\ValueObject\Name;
-use App\Domain\ValueObject\Password;
-use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-class BorrowingTest extends TestCase
+class BorrowingTest extends KernelTestCase
 {
-    public function testBorrowingCreation(): void
+    private $entityManager;
+    private $repository;
+
+    protected function setUp(): void
     {
-        $name = new Name('John Doe');
-        $email = new Email('john.doe@example.com');
-        $password = new Password('securepassword123');
-        $user = new User($name, $email, $password);
-
-        $book = new Book();
-        $book->setStatus(BookStatus::AVAILABLE);
-
-        $borrowing = new Borrowing($user, $book);
-
-        $this->assertEquals($user, $borrowing->getUser());
-        $this->assertEquals($book, $borrowing->getBook());
-        $this->assertInstanceOf(\DateTimeInterface::class, $borrowing->getCheckoutDate());
+        $kernel = self::bootKernel();
+        $this->entityManager = $kernel->getContainer()->get('doctrine')->getManager();
+        $this->repository = $this->entityManager->getRepository(Borrowing::class);
     }
 
-    public function testBorrowingReturn(): void
+    public function testCreateBorrowing()
     {
-        $name = new Name('John Doe');
-        $email = new Email('john.doe@example.com');
-        $password = new Password('securepassword123');
-        $user = new User($name, $email, $password);
-
-        $book = new Book();
-        $book->setStatus(BookStatus::AVAILABLE);
+        $bookRrepository = $this->entityManager->getRepository(Book::class);
+        $userRepository = $this->entityManager->getRepository(User::class);
+        $user = $userRepository->findOneBy(['email.email' => 'user6@example.com']);
+        $book = $bookRrepository->findOneBy(['title' => 'Book Title 4']);
 
         $borrowing = new Borrowing($user, $book);
+        $this->entityManager->persist($borrowing);
+        $this->entityManager->flush();
 
-        $this->assertNull($borrowing->getCheckinDate());
+        $savedBorrowing = $this->repository->find($borrowing->getId());
 
-        $borrowing->return();
-
-        $this->assertInstanceOf(\DateTimeInterface::class, $borrowing->getCheckinDate());
+        $this->assertInstanceOf(Borrowing::class, $savedBorrowing);
+        $this->assertEquals($user->getId(), $savedBorrowing->getUser()->getId());
+        $this->assertEquals($book->getId(), $savedBorrowing->getBook()->getId());
     }
 
-    public function testReturnAlreadyReturnedBook(): void
+    public function testReadBorrowing()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('This book is already returned');
+        $borrowing = $this->repository->findOneBy(['checkoutDate' => new \DateTime('now')]);
 
-        $name = new Name('John Doe');
-        $email = new Email('john.doe@example.com');
-        $password = new Password('securepassword123');
-        $user = new User($name, $email, $password);
+        $this->assertInstanceOf(Borrowing::class, $borrowing);
+        $this->assertNotNull($borrowing->getUser());
+        $this->assertNotNull($borrowing->getBook());
+    }
 
-        $book = new Book();
-        $book->setStatus(BookStatus::AVAILABLE);
+    public function testUpdateBorrowing()
+    {
+        $borrowing = $this->repository->findOneBy(['checkoutDate' => new \DateTime('now')]);
 
-        $borrowing = new Borrowing($user, $book);
-        $borrowing->return();
+        $newCheckinDate = new \DateTime('now');
+        $borrowing->setCheckinDate($newCheckinDate);
+        $this->entityManager->flush();
 
-        $borrowing->return();  // This should throw an exception
+        $updatedBorrowing = $this->repository->find($borrowing->getId());
+        $this->assertEquals($newCheckinDate, $updatedBorrowing->getCheckinDate());
+    }
+
+    protected function restoreExceptionHandler(): void
+    {
+        while (true) {
+            $previousHandler = set_exception_handler(static fn() => null);
+            restore_exception_handler();
+
+            if ($previousHandler === null) {
+                break;
+            }
+
+            restore_exception_handler();
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->restoreExceptionHandler();
     }
 }

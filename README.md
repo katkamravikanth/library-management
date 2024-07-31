@@ -44,6 +44,12 @@ This project is a Library Management System API built using Symfony and follows 
 
 - Use the provided Postman collection to test the API endpoints.
 
+## Screenshots
+
+![screenshot](screenshots/api_doc.png)
+![screenshot](screenshots/postman.png)
+![screenshot](screenshots/unit_test_case.png)
+
 ## Future Considerations
 
 - Implement user-specific borrowing limits.

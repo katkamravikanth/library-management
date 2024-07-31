@@ -92,7 +92,7 @@ class UserService
         }
 
         $borrowing = new Borrowing($user, $book);
-        $book->borrow();
+        $book->markBookBorrowed();
 
         $this->entityManager->persist($borrowing);
         $this->entityManager->flush();

@@ -29,14 +29,15 @@
                             }
                         },
                         "url": {
-                            "raw": "http://127.0.0.1:8000/api/users",
+                            "raw": "http://127.0.0.1:8000/api/users/new",
                             "protocol": "http",
                             "host": [
                                 "127.0.0.1:8000"
                             ],
                             "path": [
                                 "api",
-                                "users"
+                                "users",
+                                "new"
                             ]
                         }
                     },
@@ -218,14 +219,15 @@
                             }
                         },
                         "url": {
-                            "raw": "http://127.0.0.1:8000/api/books",
+                            "raw": "http://127.0.0.1:8000/api/books/new",
                             "protocol": "http",
                             "host": [
                                 "127.0.0.1:8000"
                             ],
                             "path": [
                                 "api",
-                                "books"
+                                "books",
+                                "new"
                             ]
                         }
                     },

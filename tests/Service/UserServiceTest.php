@@ -43,8 +43,8 @@ class UserServiceTest extends KernelTestCase
         $this->userService->saveUser($user);
 
         $this->assertInstanceOf(User::class, $user);
-        $this->assertEquals('John Doe', $user->getName()->getValue());
-        $this->assertEquals('john.doe@example.com', $user->getEmail()->getValue());
+        $this->assertEquals('John Doe', $user->getName());
+        $this->assertEquals('john.doe@example.com', $user->getEmail());
     }
 
     public function testUpdateUser(): void
@@ -54,8 +54,8 @@ class UserServiceTest extends KernelTestCase
         $updatedUser = $this->userService->updateUser($user, 'Jane Doe', 'jane.doe@example.com', 'newpassword123');
         $this->userService->saveUser($updatedUser);
 
-        $this->assertEquals('Jane Doe', $updatedUser->getName()->getValue());
-        $this->assertEquals('jane.doe@example.com', $updatedUser->getEmail()->getValue());
+        $this->assertEquals('Jane Doe', $updatedUser->getName());
+        $this->assertEquals('jane.doe@example.com', $updatedUser->getEmail());
     }
 
     public function testDeleteUser(): void

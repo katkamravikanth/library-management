@@ -123,7 +123,7 @@ class Book
         return $this->borrowings;
     }
 
-    public function borrow(): void
+    public function markBookBorrowed(): void
     {
         if ($this->status !== BookStatus::AVAILABLE) {
             throw new \Exception("Book not available");
@@ -132,7 +132,7 @@ class Book
         $this->status = BookStatus::BORROWED;
     }
 
-    public function returnBook(): void
+    public function markBookAvailable(): void
     {
         $this->status = BookStatus::AVAILABLE;
     }

@@ -111,6 +111,6 @@ class Borrowing
         }
 
         $this->checkinDate = new \DateTime();
-        $this->book->returnBook();
+        $this->book->markBookAvailable();
     }
 }

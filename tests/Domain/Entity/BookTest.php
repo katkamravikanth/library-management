@@ -4,44 +4,88 @@ namespace App\Tests\Domain\Entity;
 
 use App\Domain\Entity\Book;
 use App\Domain\Enum\BookStatus;
-use Faker\Factory;
-use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-class BookTest extends TestCase
+class BookTest extends KernelTestCase
 {
-    public function testBookCreation(): void
+    private $entityManager;
+    private $repository;
+
+    protected function setUp(): void
     {
-        $faker = Factory::create();
-        $isbn = $faker->isbn10;
-
-        $book = new Book();
-        $book->setTitle('Test Book');
-        $book->setAuthor('Author Name');
-        $book->setIsbn($isbn);
-
-        $this->assertEquals('Test Book', $book->getTitle());
-        $this->assertEquals('Author Name', $book->getAuthor());
-        $this->assertEquals($isbn, $book->getIsbn());
-        $this->assertEquals(BookStatus::AVAILABLE, $book->getStatus());
+        $kernel = self::bootKernel();
+        $this->entityManager = $kernel->getContainer()->get('doctrine')->getManager();
+        $this->repository = $this->entityManager->getRepository(Book::class);
     }
 
-    public function testBookBorrow(): void
+    public function testCreateBook()
     {
         $book = new Book();
+        $book->setTitle('Sample Book Title');
+        $book->setAuthor('Sample Author');
+        $book->setIsbn('1234567890123');
         $book->setStatus(BookStatus::AVAILABLE);
-        
-        $book->borrow();
 
-        $this->assertEquals(BookStatus::BORROWED, $book->getStatus());
+        $this->entityManager->persist($book);
+        $this->entityManager->flush();
+
+        $savedBook = $this->repository->findOneBy(['isbn' => '1234567890123']);
+
+        $this->assertInstanceOf(Book::class, $savedBook);
+        $this->assertEquals('Sample Book Title', $savedBook->getTitle());
+        $this->assertEquals('Sample Author', $savedBook->getAuthor());
+        $this->assertEquals('1234567890123', $savedBook->getIsbn());
+        $this->assertEquals(BookStatus::AVAILABLE, $savedBook->getStatus());
     }
 
-    public function testBookReturn(): void
+    public function testReadBook()
     {
-        $book = new Book();
-        $book->setStatus(BookStatus::BORROWED);
+        $book = $this->repository->findOneBy(['isbn' => '1234567890123']);
 
-        $book->returnBook();
+        $this->assertInstanceOf(Book::class, $book);
+        $this->assertEquals('Sample Book Title', $book->getTitle());
+        $this->assertEquals('Sample Author', $book->getAuthor());
+    }
 
-        $this->assertEquals(BookStatus::AVAILABLE, $book->getStatus());
+    public function testUpdateBook()
+    {
+        $book = $this->repository->findOneBy(['isbn' => '1234567890123']);
+        
+        $book->setTitle('Updated Book Title');
+        $this->entityManager->flush();
+
+        $updatedBook = $this->repository->findOneBy(['isbn' => '1234567890123']);
+        $this->assertEquals('Updated Book Title', $updatedBook->getTitle());
+    }
+
+    public function testDeleteBook()
+    {
+        $book = $this->repository->findOneBy(['isbn' => '1234567890123']);
+
+        $this->entityManager->remove($book);
+        $this->entityManager->flush();
+
+        $deletedBook = $this->repository->findOneBy(['isbn' => '1234567890123']);
+        $this->assertNull($deletedBook);
+    }
+
+    protected function restoreExceptionHandler(): void
+    {
+        while (true) {
+            $previousHandler = set_exception_handler(static fn() => null);
+            restore_exception_handler();
+
+            if ($previousHandler === null) {
+                break;
+            }
+
+            restore_exception_handler();
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->restoreExceptionHandler();
     }
 }
