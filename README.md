@@ -7,22 +7,30 @@ This project is a Library Management System API built using Symfony and follows 
 ## Installation Instructions
 
 1. Clone the repository.
-2. Install dependencies:
+2. Copy `.env.dist` and rename it to `.env`
+   - Add your own 32 digit alphanumerical string to `APP_SECRET` (Ex: **76a1f96fd36e73aae18779de9903033f**)
+   - Uncomment and update `DATABASE_URL="mysql://<username>:<password>@127.0.0.1:3306/<database>?serverVersion=mariadb-10.4.8&charset=utf8mb4"` value with proper database credentials
+3. Install dependencies:
    `composer install`
-3. Set up the database:
-   `php bin/console doctrine:database:create`
-   `php bin/console doctrine:schema:update --force`
-   `php bin/console doctrine:fixtures:load`
-4. Run the Symfony server
-   `symfony server:start`
-5. To access API documentation
-   `http://127.0.0.1:8000/api/doc`
-6. To run test cases
-   `php vendor/bin/phpunit`
+4. Set up the database:
+   - Set up Dev environment
+     - `php bin/console doctrine:database:create` (This command will create database)
+     - `php bin/console doctrine:migrations:migrate` (This command will create tables and its schema)
+     - `php bin/console doctrine:fixtures:load` (This command will add dummy data to begain with in dev environment)
+   - Set up Test environment
+     - `php bin/console --env=test doctrine:database:create` (This command will create database for test environment)
+     - `php bin/console --env=test doctrine:migrations:migrate` (This command will create tables and its schema for test environment)
+     - `php bin/console --env=test doctrine:fixtures:load` (This command will add dummy data to run unit test in test environment)
+5. Run the Symfony server
+   - `symfony server:start`
+6. To access API documentation
+   - `http://127.0.0.1:8000/api/doc`
+7. To run test cases
+   - `php vendor/bin/phpunit`
 
-## API Documentation
+# API Documentation
 
-# Users
+## Users
 
 - Create User: POST /api/users
 - Get User by ID: GET /api/users/{id}
@@ -44,14 +52,13 @@ This project is a Library Management System API built using Symfony and follows 
 
 - Use the provided Postman collection to test the API endpoints.
 
-## Screenshots
+# Screenshots
 
-![screenshot](screenshot/api_doc.png)
-![screenshot](screenshot/postman.png)
-![screenshot](screenshot/unit_test_case.png)
+![screenshot](screenshots/api_doc.png)
+![screenshot](screenshots/postman.png)
+![screenshot](screenshots/unit_test_case.png)
 
-## Future Considerations
+# Future Considerations
 
-- Implement user-specific borrowing limits.
 - Add more detailed logging and error handling.
 - Improve security and add authentication.

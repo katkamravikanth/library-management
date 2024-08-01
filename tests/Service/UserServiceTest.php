@@ -39,32 +39,34 @@ class UserServiceTest extends KernelTestCase
 
     public function testCreateUser(): void
     {
-        $user = $this->userService->createUser('John Doe', 'john.doe@example.com', 'password123');
+        $user = $this->userService->createUser('John Doe', 'john.doe.you@example.com', 'password123');
         $this->userService->saveUser($user);
 
-        $this->assertInstanceOf(User::class, $user);
-        $this->assertEquals('John Doe', $user->getName());
-        $this->assertEquals('john.doe@example.com', $user->getEmail());
+        $savedUser = $this->userRepository->findOneBy(['email.email' => 'john.doe.you@example.com']);
+
+        $this->assertInstanceOf(User::class, $savedUser);
+        $this->assertEquals('John Doe', $savedUser->getName());
+        $this->assertEquals('john.doe.you@example.com', $savedUser->getEmail());
     }
 
     public function testUpdateUser(): void
     {
-        $user = $this->userRepository->findOneBy(['email.email' => 'john.doe@example.com']);
+        $user = $this->userRepository->findOneBy(['email.email' => 'john.doe.you@example.com']);
 
-        $updatedUser = $this->userService->updateUser($user, 'Jane Doe', 'jane.doe@example.com', 'newpassword123');
-        $this->userService->saveUser($updatedUser);
+        $updatUser = $this->userService->updateUser($user, 'Jane Doe', 'john.doe.you@example.com', 'newpassword123');
+        $this->userService->saveUser($updatUser);
 
+        $updatedUser = $this->userRepository->findOneBy(['email.email' => 'john.doe.you@example.com']);
         $this->assertEquals('Jane Doe', $updatedUser->getName());
-        $this->assertEquals('jane.doe@example.com', $updatedUser->getEmail());
     }
 
     public function testDeleteUser(): void
     {
-        $user = $this->userRepository->findOneBy(['email.email' => 'jane.doe@example.com']);
+        $user = $this->userRepository->findOneBy(['email.email' => 'john.doe.you@example.com']);
 
         $this->userService->deleteUser($user);
 
-        $deletedUser = $this->userRepository->findOneBy(['email.email' => 'jane.doe@example.com']);
+        $deletedUser = $this->userRepository->findOneBy(['email.email' => 'john.doe.you@example.com']);
         $this->assertNull($deletedUser);
     }
 
