@@ -9,7 +9,8 @@ This project is a Library Management System API built using Symfony and follows 
 1. Clone the repository.
 2. Copy `.env.dist` and rename it to `.env`
    - Add your own 32 digit alphanumerical string to `APP_SECRET` (Ex: **76a1f96fd36e73aae18779de9903033f**)
-   - Uncomment and update `DATABASE_URL="mysql://<username>:<password>@127.0.0.1:3306/<database>?serverVersion=mariadb-10.4.8&charset=utf8mb4"` value with proper database credentials
+   - Uncomment and update `DATABASE_URL="mysql://username:password@127.0.0.1:3306/database?serverVersion=mariadb-10.4.8&charset=utf8mb4"` value with proper database credentials
+   - Change **username** with your database username, **password** with your databse password and **database** with your database name in above line
 3. Install dependencies:
    `composer install`
 4. Set up the database:
