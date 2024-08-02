@@ -141,7 +141,7 @@ class BookController extends AbstractController
             new OA\Parameter(name: "id", in: "path", description: "Book ID", required: true, schema: new OA\Schema(type: "integer"), example: 1)
         ],
         responses: [
-            new OA\Response(response: 204, description: ""),
+            new OA\Response(response: 200, description: "Book deleted"),
             new OA\Response(response: 404, description: "Book not found."),
             new OA\Response(response: 400, description: "Foreign key constraint violation."),
             new OA\Response(response: 500, description: "An error occurred while deleting the book.")
@@ -163,7 +163,7 @@ class BookController extends AbstractController
             return $this->json(['message' => 'An error occurred while deleting the book.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        return $this->json(['status' => 'Book deleted!']);
     }
 
     #[OA\Get(

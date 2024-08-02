@@ -211,7 +211,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"title\": \"Book Title\",\n    \"author\": \"Author Name\",\n    \"isbn\": \"1234567890\"\n}",
+                            "raw": "{\n    \"title\": \"Book Title\",\n    \"author\": \"Author Name\",\n    \"isbn\": \"0-061-96436-0\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -266,7 +266,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"title\": \"Updated Book Title\",\n    \"author\": \"Updated Author Name\",\n    \"isbn\": \"0987654321\"\n}",
+                            "raw": "{\n    \"title\": \"Updated Book Title\",\n    \"author\": \"Updated Author Name\",\n    \"isbn\": \"0-061-96436-0\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
