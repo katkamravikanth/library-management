@@ -175,7 +175,9 @@ class UserControllerTest extends WebTestCase
 
         $this->client->request('DELETE', sprintf('%s%s', $this->path, $user->getId()));
 
-        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('User deleted!.', $responseContent['message']);
 
         $deletedUser = $this->repository->findOneBy(['email.email' => 'john.smith.edit@example.com']);
         $this->assertNull($deletedUser);

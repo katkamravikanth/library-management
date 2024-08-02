@@ -253,7 +253,9 @@ class BookControllerTest extends WebTestCase
 
         $this->client->request('DELETE', sprintf('%s%s', $this->path, $book->getId()));
 
-        $this->assertEquals(Response::HTTP_NO_CONTENT, $this->client->getResponse()->getStatusCode());
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+        $responseContent = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals('Book deleted!.', $responseContent['message']);
 
         $deletedBook = $this->repository->findOneBy(['title'=> 'Updated Test Book']);
         $this->assertNull($deletedBook);
