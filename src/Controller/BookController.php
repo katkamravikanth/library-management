@@ -33,14 +33,21 @@ class BookController extends AbstractController
     #[OA\Post(
         summary: "Create a new book",
         requestBody: new OA\RequestBody(
-            content: new OA\JsonContent(ref: new Model(type: Book::class, groups: ["write"]))
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "title", type: "string", example: "book titie"),
+                    new OA\Property(property: "author", type: "string", example: "author name"),
+                    new OA\Property(property: "isbn", type: "string", example: "0-061-96436-0")
+                ]
+            )
         ),
         responses: [
-            new OA\Response(
-                response: 201,
-                description: "Book created",
-                content: new OA\JsonContent(ref: new Model(type: Book::class))
-            )
+            new OA\Response(response: 201, description: "Book created!"),
+            new OA\Response(response: 400, description: "Invalid data"),
+            new OA\Response(response: 406, description: "Title, author, and ISBN are required fields"),
+            new OA\Response(response: 409, description: "A book with this ISBN already exists."),
         ]
     )]
     #[Route('/new', methods: ['POST'])]
@@ -53,7 +60,7 @@ class BookController extends AbstractController
 
         // Validate required fields
         if (empty($data['title']) || empty($data['author']) || empty($data['isbn'])) {
-            return $this->json(['message' => 'Title, author, and ISBN are required fields'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => 'Title, author, and ISBN are required fields'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $book = $this->bookService->createBook($data);
@@ -73,24 +80,26 @@ class BookController extends AbstractController
 
     #[OA\Put(
         summary: "Update an existing book",
-        requestBody: new OA\RequestBody(
-            content: new OA\JsonContent(ref: new Model(type: Book::class, groups: ["write"]))
-        ),
         parameters: [
-            new OA\Parameter(
-                name: "id",
-                in: "path",
-                description: "Book ID",
-                required: true,
-                schema: new OA\Schema(type: "integer")
-            )
+            new OA\Parameter(name: "id", in: "path", description: "Book ID", required: true, schema: new OA\Schema(type: "integer"), example: 1)
         ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "Book updated",
-                content: new OA\JsonContent(ref: new Model(type: Book::class))
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "title", type: "string", example: "book titie"),
+                    new OA\Property(property: "author", type: "string", example: "author name"),
+                    new OA\Property(property: "isbn", type: "string", example: "0-061-96436-0")
+                ]
             )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Book updated!"),
+            new OA\Response(response: 400, description: "Invalid data"),
+            new OA\Response(response: 404, description: "Book not found."),
+            new OA\Response(response: 406, description: "Title, author, and ISBN are required fields"),
+            new OA\Response(response: 409, description: "A book with this ISBN already exists.")
         ]
     )]
     #[Route('/{id}', methods: ['PUT'])]
@@ -108,7 +117,7 @@ class BookController extends AbstractController
 
         // Validate required fields
         if (empty($data['title']) || empty($data['author']) || empty($data['isbn'])) {
-            return $this->json(['message' => 'Title, author, and ISBN are required fields'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['message' => 'Title, author, and ISBN are required fields'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $updatedBook = $this->bookService->updateBook($book, $data);
@@ -129,16 +138,13 @@ class BookController extends AbstractController
     #[OA\Delete(
         summary: "Delete a book",
         parameters: [
-            new OA\Parameter(
-                name: "id",
-                in: "path",
-                description: "Book ID",
-                required: true,
-                schema: new OA\Schema(type: "integer")
-            )
+            new OA\Parameter(name: "id", in: "path", description: "Book ID", required: true, schema: new OA\Schema(type: "integer"), example: 1)
         ],
         responses: [
-            new OA\Response(response: 204, description: "Book deleted")
+            new OA\Response(response: 204, description: ""),
+            new OA\Response(response: 404, description: "Book not found."),
+            new OA\Response(response: 400, description: "Foreign key constraint violation."),
+            new OA\Response(response: 500, description: "An error occurred while deleting the book.")
         ]
     )]
     #[Route('/{id}', methods: ['DELETE'])]
@@ -185,20 +191,12 @@ class BookController extends AbstractController
     #[OA\Get(
         summary: "Get a book by ID",
         parameters: [
-            new OA\Parameter(
-                name: "id",
-                in: "path",
-                description: "Book ID",
-                required: true,
-                schema: new OA\Schema(type: "integer")
-            )
+            new OA\Parameter(name: "id", in: "path", description: "Book ID", required: true, schema: new OA\Schema(type: "integer"), example: 1)
         ],
         responses: [
-            new OA\Response(
-                response: 200,
-                description: "Book details",
-                content: new OA\JsonContent(ref: new Model(type: Book::class))
-            )
+            new OA\Response(response: 200, description: "", content: new OA\JsonContent(ref: new Model(type: Book::class))),
+            new OA\Response(response: 400, description: "Invalid ID type. ID must be a positive integer."),
+            new OA\Response(response: 404, description: "Book not found.")
         ]
     )]
     #[Route('/{id}', methods: ['GET'])]

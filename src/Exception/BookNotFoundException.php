@@ -10,6 +10,6 @@ class BookNotFoundException extends \Exception
 
     public function __construct()
     {
-        parent::__construct('Book not found.', Response::HTTP_NOT_FOUND);
+        parent::__construct($this->message, Response::HTTP_NOT_FOUND);
     }
 }

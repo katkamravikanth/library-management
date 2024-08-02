@@ -18,16 +18,17 @@ This project is a Library Management System API built using Symfony and follows 
      - `php bin/console doctrine:database:create` (This command will create database)
      - `php bin/console doctrine:migrations:migrate` (This command will create tables and its schema)
      - `php bin/console doctrine:fixtures:load` (This command will add dummy data to begain with in dev environment)
-   - Set up Test environment
-     - `php bin/console --env=test doctrine:database:create` (This command will create database for test environment)
-     - `php bin/console --env=test doctrine:migrations:migrate` (This command will create tables and its schema for test environment)
-     - `php bin/console --env=test doctrine:fixtures:load` (This command will add dummy data to run unit test in test environment)
 5. Run the Symfony server
    - `symfony server:start`
 6. To access API documentation
    - `http://127.0.0.1:8000/api/doc`
 7. To run test cases
-   - `php vendor/bin/phpunit`
+   - Set up Test environment
+     - `php bin/console --env=test doctrine:database:create` (This command will create database for test environment)
+     - `php bin/console --env=test doctrine:migrations:migrate` (This command will create tables and its schema for test environment)
+     - `php bin/console --env=test doctrine:fixtures:load` (This command will add dummy data to run unit test in test environment)
+   - Command to execute test cases
+     - `php vendor/bin/phpunit`
 
 # API Documentation
 
